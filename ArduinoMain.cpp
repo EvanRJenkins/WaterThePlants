@@ -16,16 +16,17 @@ typedef enum State {  // New type for state machine
 } state_t;
 
 
-typedef struct {
+typedef struct {                         // Type to hold key characteristics of unique plants
   unsigned char species[10];
   unsigned char sensorPin;
   unsigned int moistureLevel;
   unsigned char targetMoistureRange[2];  // Indices define bounds of % range for ideal soil saturation
 } Plant;
 
-Plant hibiscus;
-strcpy(hibiscus.species, "hibiscus");
-hibiscus.sensorPin = AI0;
+
+Plant hibiscus;                        // Instantiation of Plant hibiscus
+strcpy(hibiscus.species, "hibiscus");  // Plant species assignment
+hibiscus.sensorPin = AI0;              // Moisture sensor input pin
 hibiscus.targetMoistureRange[0] = 50;  // Lower Bound
 hibiscus.targetMoistureRange[1] = 75;  // Upper Bound
 
