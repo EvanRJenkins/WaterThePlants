@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include <avr/io.h>
 #include <string.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
 #define AI0 PC0
 #define PUMP_PIN PD2  // To-do: Allocate pins to peripherals
