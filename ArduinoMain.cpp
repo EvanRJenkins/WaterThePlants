@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <avr/io.h>
+#include <string.h>
 
-#define PUMP_PIN ...  // To-do: Allocate pins to peripherals
-#define ...
+#define AI0 PC0
+#define PUMP_PIN PD2  // To-do: Allocate pins to peripherals
 
 SMCR |= (1 << SM1);  // Set Sleep Mode Control Register to Power Down Mode
 
-typedef enum sysState {  // New type for state machine
+typedef enum State {  // New type for state machine
   IDLE,
   INTERRUPT,
   WATERING,
@@ -14,6 +15,19 @@ typedef enum sysState {  // New type for state machine
   ERROR
 } state_t;
 
+
+typedef struct {
+  unsigned char species[10];
+  unsigned char sensorPin;
+  unsigned int moistureLevel;
+  unsigned char targetMoistureRange[2];  // Indices define bounds of % range for ideal soil saturation
+} Plant;
+
+Plant hibiscus;
+strcpy(hibiscus.species, "hibiscus");
+hibiscus.sensorPin = AI0;
+hibiscus.targetMoistureRange[0] = 50;  // Lower Bound
+hibiscus.targetMoistureRange[1] = 75;  // Upper Bound
 
 state_t currentState;  // Holds current system state
 
