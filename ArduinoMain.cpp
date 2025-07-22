@@ -21,8 +21,8 @@ ISR (PCINT0_vect) {  // Define Pin change interrupt handler for pin PB0 (D8)
   current = LOG_PRE;
 }
 
-ISR (ADC_vect) {  // Define ADC conversion complete interrupt handler
-  newDataAvailable = false;
+ISR (ADC_vect) {            // Define ADC conversion complete interrupt handler
+  newDataAvailable = true;  // Set flag that new ADC data is availiable
 }
 
 
@@ -84,14 +84,10 @@ int main(void) {
       
       case LOG_PRE:
         if (currentPlantIndex < PLANTS_IN_GARDEN) {
-          if (currentPlantIndex > 0) {
-            // log;
-          }
-          current = adcRecord(plantList[currentPlantIndex].sensorPin);
-          ++currentPlantIndex;
+          currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
         }
         else {
-          current = WATERING;
+          currentState = WATERING;
           currentPlantIndex = 0;
         }
         break;
@@ -99,6 +95,9 @@ int main(void) {
       case WAITING_FOR_ADC:
         if (newDataAvailable) {
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADCL and ADCH into the lower and upper halves of current plant's moistureLevel
+          newDataAvailable = false;
+          ++currentPlantIndex
+          currentState = LOG_PRE;
         }
         break;                // Stay here until ADC complete interrupt
       
@@ -157,7 +156,10 @@ state_t sysInit() {
   definePlants();
 
   //if something goes wrong, return ERROR;
-  //else  call sei(); return IDLE; // End initialization by entering IDLE state to wait for PCINT0
+  
+  sei(); 
+  
+  return IDLE;
 }
 
 
