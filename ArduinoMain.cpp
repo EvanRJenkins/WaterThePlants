@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+
 
 #define PLANTS_IN_GARDEN 2  // Adjust depending on # of plants currently in garden
 #define AI0 PC0
@@ -20,7 +22,7 @@ ISR (PCINT0_vect) {  // Define Pin change interrupt handler for pin PB0 (D8)
 }
 
 ISR (ADC_vect) {  // Define ADC conversion complete interrupt handler
-  update next plant pointer;
+  newDataAvailable = false;
 }
 
 
@@ -29,6 +31,7 @@ ISR (ADC_vect) {  // Define ADC conversion complete interrupt handler
 typedef enum State {  // Enum for state machine
   IDLE,               // Power down, only exit via interrupt
   LOG_PRE,            // Log before watering
+  WAITING_FOR_ADC,
   WATERING,           // Send water to target plant(s)
   LOG_POST,           // Log after watering
   ERROR               // System fault, block all tasks until error ack
@@ -48,6 +51,10 @@ state_t currentState;  // Holds current system state
 
 Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
+unsigned char currentPlantIndex;
+
+volatile bool newDataAvailable = false;  // Flag to be triggered by ADC complete interrupt
+
 
 /* Startup functions */
 
@@ -58,6 +65,9 @@ void definePlants();   // Subroutine of sysInit for Plant definitions
 void regConfig();      // Subroutine of sysInit for Register configurations
 
 
+/* State WATERING functions */
+
+unsigned int anlgRecord(unsigned char sensorPin);
 
 
 int main(void) {
@@ -67,25 +77,42 @@ int main(void) {
   while (1) {  // State machine loop
     
     switch (currentState) {
-      case IDLE:
-        // sei();               // Enable global interrupts
+      
+      case IDLE:  
         // sleep();             // Call AVR Sleep instruction
         break;
+      
       case LOG_PRE:
-        // log desired data
-          // start ADC
-          // read ADCL and ADCH and copy to Plant.MoistureLevel
-        // update state
+        if (currentPlantIndex < PLANTS_IN_GARDEN) {
+          if (currentPlantIndex > 0) {
+            // log;
+          }
+          current = adcRecord(plantList[currentPlantIndex].sensorPin);
+          ++currentPlantIndex;
+        }
+        else {
+          current = WATERING;
+          currentPlantIndex = 0;
+        }
         break;
+      
+      case WAITING_FOR_ADC:
+        if (newDataAvailable) {
+          plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADCL and ADCH into the lower and upper halves of current plant's moistureLevel
+        }
+        break;                // Stay here until ADC complete interrupt
+      
       case WATERING:
         // adjust watering sequence
         // water target plant(s)
         // update state
         break;
+      
       case LOG_POST:
         // log desired data
         // update state
         break;
+     
       case ERROR:
         // perform any fail safety actions
         // wait for error to clear
@@ -131,4 +158,44 @@ state_t sysInit() {
 
   //if something goes wrong, return ERROR;
   //else  call sei(); return IDLE; // End initialization by entering IDLE state to wait for PCINT0
+}
+
+
+state_t adcRecord(unsigned char targetPin) {
+
+/* Set MUX2..0 to ADC channel of targetPin */
+ switch (targetPin) {
+  case AI0:  // 000
+    ADMUX &= ~((1 << MUX2) | (1 << MUX1) | (1 << MUX0));
+    break;
+  case AI1:  // 001
+    ADMUX &= ~((1 << MUX2) | (1 << MUX1));
+    ADMUX |= (1 << MUX0);
+    break;
+  case AI2:  // 010
+    ADMUX &= ~((1 << MUX2) | (1 << MUX0));
+    ADMUX |= (1 << MUX1);
+    break;
+  case AI3:  // 011
+    ADMUX &= ~(1 << MUX2);
+    ADMUX |= (1 << MUX1) | (1 << MUX0);
+    break;
+  case AI4:  // 100
+    ADMUX &= ~((1 << MUX1) | (1 << MUX0));
+    ADMUX |= (1 << MUX2);
+    break;
+  case AI5:  // 101
+    ADMUX &= ~(1 << MUX1);
+    ADMUX |= (1 << MUX2) | (1 << MUX0);
+    break;
+  default: // Default to channel 0
+    ADMUX &= ~((1 << MUX2) | (1 << MUX1) | (1 << MUX0));
+    break;
+ }
+
+
+  ADCSRA |= (1 << ADEN);  // Enable ADC (Set ADEN)
+  ADCSRA |= (1 << ADSC);  // Start ADC conversion (Set ADSC bit)
+
+  return WAITING_FOR_ADC;
 }
