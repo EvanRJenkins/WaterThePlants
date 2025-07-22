@@ -3,7 +3,13 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+#define PLANTS_IN_GARDEN 2  // Adjust depending on # of plants currently in garden
 #define AI0 PC0
+#define AI1 PC1
+#define AI2 PC2
+#define AI3 PC3
+#define AI4 PC4
+#define AI5 PC5
 #define PUMP_PIN PD2  // To-do: Allocate pins to peripherals
 
 
@@ -38,9 +44,9 @@ typedef struct {                         // Holds key characteristics of an indi
 
 /* Global Variables */
 
-Plant hibiscus;        // Instantiation of Plant hibiscus
-
 state_t currentState;  // Holds current system state
+
+Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
 
 /* Startup functions */
@@ -92,23 +98,29 @@ int main(void) {
 
 void definePlants() {
 
-  // Definition of Plant hibiscus
-  strcpy(hibiscus.species, "hibiscus");  // Plant species assignment
-  hibiscus.sensorPin = AI0;              // Moisture sensor input pin
-  hibiscus.targetMoistureRange[0] = 50;  // Lower Bound
-  hibiscus.targetMoistureRange[1] = 75;  // Upper Bound
+/* Definition of plants in garden */
 
+  strcpy(plantList[0].species, "hibiscus");     // Define plantList[0] as "hibiscus"
+  plantList[0].sensorPin = AI0;                 // Moisture sensor input pin
+  plantList[0].targetMoistureRange[0] = 50;     // Lower Bound
+  plantList[0].targetMoistureRange[1] = 75;     // Upper Bound
+
+  strcpy(plantList[1].species, "hibiscus");     // Define plantList[1] as "marigold"
+  plantList[1].sensorPin = AI1;                 // Moisture sensor input pin
+  plantList[1].targetMoistureRange[0] = 50;     // Lower Bound
+  plantList[1].targetMoistureRange[1] = 75;     // Upper Bound
+  
   // Add any additional plants here
 }
 
 void regConfig() {
-  DDRB &= ~(1 << DDB0);  // Set pin D8 as input
   
-  PORTB |= (1 << PORTB0); // Enable pull-up on pin D8
-  
+  DDRB &= ~(1 << DDB0);     // Set pin D8 as input
+  PORTB |= (1 << PORTB0);   // Enable pull-up on pin D8
   SMCR |= (1 << SM1);       // Set Sleep Mode Control Register to Power Down Mode
-
-  DDRD |= (1 << PUMP_PIN);  //Set pump pin data direction to output
+  DDRD |= (1 << PUMP_PIN);  // Set pump pin data direction to output
+  ADCSRA |= (1 << ADIE);    // Enable 'ADC complete' interrupt
+  
 }
 
 state_t sysInit() {
@@ -118,5 +130,5 @@ state_t sysInit() {
   definePlants();
 
   //if something goes wrong, return ERROR;
-  //else return IDLE; // End initialization by entering IDLE state to wait for PCINT0
+  //else  call sei(); return IDLE; // End initialization by entering IDLE state to wait for PCINT0
 }
