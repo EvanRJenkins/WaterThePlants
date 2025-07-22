@@ -7,15 +7,28 @@
 #define PUMP_PIN PD2  // To-do: Allocate pins to peripherals
 
 
-typedef enum State {  // New type for state machine
-  IDLE,
-  WATERING,
-  LOGGING,
-  ERROR
+/* ISR Handler Macros */
+
+ISR (PCINT0_vect) {  // Define Pin change interrupt handler for pin PB0 (D8)
+  current = LOG_PRE;
+}
+
+ISR (ADC_vect) {  // Define ADC conversion complete interrupt handler
+  update next plant pointer;
+}
+
+
+/* Type Definitions */
+
+typedef enum State {  // Enum for state machine
+  IDLE,               // Power down, only exit via interrupt
+  LOG_PRE,            // Log before watering
+  WATERING,           // Send water to target plant(s)
+  LOG_POST,           // Log after watering
+  ERROR               // System fault, block all tasks until error ack
 } state_t;
 
-
-typedef struct {                         // Type to hold key characteristics of unique plants
+typedef struct {                         // Holds key characteristics of an individual plant
   unsigned char species[10];             // String holding plant species name
   unsigned char sensorPin;               // Analog Input Pin for Plant's moisture sensor
   unsigned int moistureLevel;            // Most recently logged moisture level
@@ -23,13 +36,23 @@ typedef struct {                         // Type to hold key characteristics of 
 } Plant;
 
 
-Plant hibiscus;  // Instantiation of Plant hibiscus
+/* Global Variables */
+
+Plant hibiscus;        // Instantiation of Plant hibiscus
 
 state_t currentState;  // Holds current system state
 
-state_t sysInit();
 
-void definePlants();
+/* Startup functions */
+
+state_t sysInit();     // Initializes registers and variables
+
+void definePlants();   // Subroutine of sysInit for Plant definitions
+
+void regConfig();      // Subroutine of sysInit for Register configurations
+
+
+
 
 int main(void) {
   
@@ -42,11 +65,18 @@ int main(void) {
         // sei();               // Enable global interrupts
         // sleep();             // Call AVR Sleep instruction
         break;
-      case WATERING:
-        // call start watering function
+      case LOG_PRE:
+        // log desired data
+          // start ADC
+          // read ADCL and ADCH and copy to Plant.MoistureLevel
         // update state
         break;
-      case LOGGING:
+      case WATERING:
+        // adjust watering sequence
+        // water target plant(s)
+        // update state
+        break;
+      case LOG_POST:
         // log desired data
         // update state
         break;
@@ -60,7 +90,7 @@ int main(void) {
 }
 
 
-void definePlants() {                    // Defines attributes of existing Plants
+void definePlants() {
 
   // Definition of Plant hibiscus
   strcpy(hibiscus.species, "hibiscus");  // Plant species assignment
@@ -71,17 +101,22 @@ void definePlants() {                    // Defines attributes of existing Plant
   // Add any additional plants here
 }
 
-
-state_t sysInit() {
+void regConfig() {
+  DDRB &= ~(1 << DDB0);  // Set pin D8 as input
+  
+  PORTB |= (1 << PORTB0); // Enable pull-up on pin D8
   
   SMCR |= (1 << SM1);       // Set Sleep Mode Control Register to Power Down Mode
 
   DDRD |= (1 << PUMP_PIN);  //Set pump pin data direction to output
+}
 
-  //Insert all pin configurations
-
+state_t sysInit() {
+  
+  regConfig();
+  
   definePlants();
 
   //if something goes wrong, return ERROR;
-  //else return LOGGING; // End initialization by entering LOGGING state to record startup values
+  //else return IDLE; // End initialization by entering IDLE state to wait for PCINT0
 }
