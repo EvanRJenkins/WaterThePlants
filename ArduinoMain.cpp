@@ -18,7 +18,7 @@
 /* ISR Handler Macros */
 
 ISR (PCINT0_vect) {  // Define Pin change interrupt handler for pin PB0 (D8)
-  current = LOG_PRE;
+  ;  // To-Do: Add interrupt flag and sequence for pin change 'time to water' signal
 }
 
 ISR (ADC_vect) {            // Define ADC conversion complete interrupt handler
@@ -65,9 +65,9 @@ void definePlants();   // Subroutine of sysInit for Plant definitions
 void regConfig();      // Subroutine of sysInit for Register configurations
 
 
-/* State WATERING functions */
+/* State Functions */
 
-unsigned int anlgRecord(unsigned char sensorPin);
+unsigned int adcRecord(unsigned char sensorPin);
 
 
 int main(void) {
