@@ -67,7 +67,7 @@ void regConfig();      // Subroutine of sysInit for Register configurations
 
 /* State Functions */
 
-unsigned int adcRecord(unsigned char sensorPin);
+unsigned int adcRecord(unsigned char targetPin);
 
 
 int main(void) {
@@ -96,7 +96,7 @@ int main(void) {
         if (newDataAvailable) {
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADCL and ADCH into the lower and upper halves of current plant's moistureLevel
           newDataAvailable = false;
-          ++currentPlantIndex
+          ++currentPlantIndex;
           currentState = LOG_PRE;
         }
         break;                // Stay here until ADC complete interrupt
