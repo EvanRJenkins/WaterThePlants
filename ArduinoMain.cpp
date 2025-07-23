@@ -8,7 +8,7 @@
 
 #define PCINT0 (1 << 0)  // Bit 0 is PCINT0
 #define ADC (1 << 1)     // Bit 1 is ADC complete
-
+#define WTRDONE (1 << 2) // Bit 2 is watering done
 
 /* Constants dependent of physical setup */
 
@@ -38,6 +38,10 @@ ISR (ADC_vect) {      // Interrupt handler for ADC conversion complete
   g_isrFlags |= ADC;  // Flag new data availiable
 }
 
+ISR (//custom watering done interrupt) {      // Interrupt handler for WTRDONE
+  g_isrFlags |= WTRDONE;  // Flag new data availiable
+}
+
 
 /* Type Definitions */
 
@@ -45,16 +49,19 @@ typedef enum State {  // Enum for state machine
   IDLE,               // Power down, only exit via interrupt
   LOG_PRE,            // Record moisture of currentPlantIndex Plant
   WAITING_FOR_ADC,    // Wait for new data, increment currentPlantIndex, go to LOG_PRE
-  WATERING,           // Send water to target plant(s)
+  START_WATERING,     // Send water to all plants
+  WAIT_FOR_FLOW,      // Delay until flow checkpoint is reached, ERROR after timeout
+  WATERING,           // Water flowing to plants
+  STOP_WATERING,      // Stop watering, transition to LOG_POST
   LOG_POST,           // Log after watering
   ERROR               // System fault, block all tasks until error ack
 } state_t;
+
 
 typedef struct {                   // Holds key characteristics of an individual plant
   unsigned char species[10];       // String holding plant species name
   uint8_t sensorPin;               // Analog Input Pin for Plant's moisture sensor
   uint16_t moistureLevel;          // Most recently logged moisture level
-  uint8_t targetMoistureRange[2];  // Indices define bounds of % range for ideal soil saturation
 } Plant;
 
 
@@ -80,7 +87,11 @@ void regConfig();      // Subfunction of sysInit for Register configurations
 
 /* State Functions */
 
-uint16_t adcRecord(uint8_t targetPin);
+state_t adcRecord(uint8_t targetPin);
+
+state_t startPump();
+
+state_t stopPump();
 
 
 /* Main */
@@ -113,7 +124,7 @@ int main(void) {
         }
         
         else {
-          currentState = WATERING;
+          currentState = START_WATERING;
           currentPlantIndex = 0;
         }
         break;
@@ -121,31 +132,65 @@ int main(void) {
 
       case WAITING_FOR_ADC:
 
-        if (g_isrFlags & ADC) {    // Evaluates as true if ADC flag bit is set
+        if ((g_isrFlags & ADC)) {    // Evaluates as true if ADC flag bit is set
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
           ++currentPlantIndex;
           g_isrFlags &= ~ADC;
-          currentState = LOG_PRE;
+          if ((g_isrFlags & ~(WTRDONE)) {
+            currentState = LOG_PRE;
+          }
+          else {
+            currentState = LOG_POST;
+          }
         }
         
         break;  // Stay here until ADC complete interrupt
 
 
-      case WATERING:
+      case START_WATERING:
 
-        // adjust watering sequence
-        
-        // water target plant(s)
-        
-        // update state
+        currentState = startPump();
         
         break;
 
 
+      case WAIT_FOR_FLOW:
+
+        if (flowCheckpoint) {
+          currentState = WATERING;
+        }
+        
+        break;
+      
+
+      case WATERING:
+
+        //start timer
+
+        if (g_isrFlags & WTRDONE) {
+          currentState = STOP_WATERING;
+        }
+        break;
+
+
+      case STOP_WATERING:
+
+        currentState = stopPump();
+
+        break;
+      
       case LOG_POST:
         
-        // log desired data
-        // update state
+         if (currentPlantIndex < PLANTS_IN_GARDEN) {
+          currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
+        }
+        
+        else {
+          g_isrFlags = 0x0;
+          currentPlantIndex = 0;
+          currentState = IDLE;
+        }
+        
         break;
 
 
@@ -169,13 +214,9 @@ void definePlants() {
 
   strcpy(plantList[0].species, "hibiscus");     // Define plantList[0] as "hibiscus"
   plantList[0].sensorPin = AI0;                 // Moisture sensor input pin
-  plantList[0].targetMoistureRange[0] = 50;     // Lower Bound
-  plantList[0].targetMoistureRange[1] = 75;     // Upper Bound
-
+  
   strcpy(plantList[1].species, "hibiscus");     // Define plantList[1] as "marigold"
   plantList[1].sensorPin = AI1;                 // Moisture sensor input pin
-  plantList[1].targetMoistureRange[0] = 50;     // Lower Bound
-  plantList[1].targetMoistureRange[1] = 75;     // Upper Bound
   
   // Add any additional plants here
 }
@@ -248,4 +289,20 @@ state_t adcRecord(uint8_t targetPin) {    // Enables ADC an starts conversion fo
   ADCSRA |= (1 << ADSC);  // Start ADC conversion (Set ADSC bit)
 
   return WAITING_FOR_ADC;
+}
+
+
+state_t startPump() {
+  
+  PORTD |= PUMP_PIN;  // Activate tank pump  
+  
+  return WAIT_FOR_FLOW;
+}
+
+
+state_t stopPump() {
+  
+  PORTD &= ~(PUMP_PIN);  // Deactivate tank pump  
+  
+  return LOG_POST;
 }
