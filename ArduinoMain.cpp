@@ -298,7 +298,7 @@ void regConfig() {
   EICRA |= (1 << ISC01);                                // Configure INT0 to trigger on a falling edge
   EIMSK |= (1 << INT0);                                 // Enable the INT0 external interrupt
   
-  /* Initialize Timer/Counter1 (ms) */
+  /* Initialize Timer/Counter1 (ms) */    // Tick_Period = (Prescaler / CPU_Frequency) * (OCR1A + 1)
   TCCR1A = 0;                                           // Clear Timer/Counter1 Control Registers
   TCCR1B = 0;                                           // Clear Timer/Counter1 Control Registers
   TCCR1B |= (1 << WGM12);                               // Set CTC mode for Timer/Counter1
