@@ -7,17 +7,20 @@
 
 /* Interrupt bitfield bits */
 
-#define PCINT0 (1 << 0)  // Bit 0 is PCINT0
-#define ADC (1 << 1)     // Bit 1 is ADC complete
-#define WTRDONE (1 << 2) // Bit 2 is watering done
+#define PCINT0 (1 << 0)         // Bit 0 is PCINT0
+#define ADC (1 << 1)            // Bit 1 is ADC complete
+#define WTRDONE (1 << 2)        // Bit 2 is watering done
 #define NEW_PULSE_DATA (1 << 3) // Bit 3 is new pulse data ready
 
 
 /* Adjust the constants for your physical setup */
 
-#define PLANTS_IN_GARDEN 2  // Adjust depending on # of plants currently in garden
-#define FLOW_RATE 562                                            // Volumetric flow rate of pump in L/ms
-static const uint8_t FLOW_CHECK_SETPOINT = (FLOW_RATE * 2);      // Minimum time (ms) between pulses for flowCheck to pass
+#define PLANTS_IN_GARDEN 2                    // Adjust depending on # of plants currently in garden
+#define FLOW_RATE 562                         // Volumetric flow rate of pump in L/ms
+#define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for flowCheck to pass
+
+
+/* Mask Aliases */
 
 
 /* Pin aliases (Arduino Uno R3) */
@@ -196,9 +199,9 @@ int main(void) {
 
       case WATERING:
 
-        if (TCCR0B &= ~(1 << CS00)) {
+        if (!(TCCR0B & (1 << CS00))) {  // True if no clock is selected
         
-          TCCR0B |= (1 << CS00);  // Select I/Oclk for Timer/Counter0 (Start it)
+          TCCR0B |= (1 << CS00);        // Select I/Oclk for Timer/Counter0 (Start it)
         }
         
         if (g_isrFlags & WTRDONE) {
@@ -212,7 +215,7 @@ int main(void) {
 
         currentState = stopPump();
 
-        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00));  // Select no clock for Timer/Counter0
+        TCCR0B &= ~TIMER0_CLOCK_MASK;  // Select no clock for Timer/Counter0
         TCNT0 = 0;                                             // Clear Timer/Counter0 data register
         
         break;
@@ -274,7 +277,7 @@ void regConfig() {
   
   /* Initialize Timer/Counter0 (watering) */
   TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00))  // Select no clock for Timer/Counter0
-  TCNT0 &= ~TCNT0;                                      // Clear Timer/Counter0 data register
+  TCNT0 = 0;                                            // Clear Timer/Counter0 data register
 
   /* Configure External Interrupt INT0 for Flow Sensor */
   DDRD &= ~(1 << DDD2);                                 // Set Pin D2 as input
