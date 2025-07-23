@@ -80,7 +80,6 @@ typedef enum State {  // Enum for state machine
   ERROR                       // System fault, block all tasks until error ack
 } state_t;
 
-
 typedef struct {  // Holds key characteristics of an individual plant
   unsigned char species[10];       // String holding plant species name
   uint8_t sensorPin;               // Analog Input Pin for Plant's moisture sensor
@@ -136,11 +135,13 @@ int main(void) {
       case IDLE:  
 
         if (g_isrFlags & PCINT0) {  // Start State sequence if PCINT0 flag
+          SMCR &= ~(1 << SM1);      // Disable sleep
           currentState = LOG_PRE;
           g_isrFlags &= ~PCINT0;
         }
           
         else {
+          SMCR |= (1 << SM1);       // Enable sleep
           sleep();                  // Enter power down mode until PCINT0
         }
           
