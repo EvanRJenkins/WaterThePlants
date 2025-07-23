@@ -17,7 +17,7 @@
 
 #define PLANTS_IN_GARDEN 2                    // Adjust depending on # of plants currently in garden
 #define FLOW_RATE 562                         // Volumetric flow rate of pump in L/ms
-#define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for flowCheck to pass
+#define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for Flow Check to pass
 
 
 /* Mask Aliases */
@@ -121,8 +121,6 @@ state_t adcRecord(uint8_t targetPin);
 state_t startPump();
 
 state_t stopPump();
-
-bool flowCheck(uint8_t passTime);
 
 
 /* Main */
