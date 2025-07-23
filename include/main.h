@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
 /* Type Definitions */
 
 typedef enum State {                  // Enum for state machine
@@ -18,11 +19,11 @@ typedef enum State {                  // Enum for state machine
   ERROR                             // System fault, block all tasks until error ack
 } state_t;
 
-
 typedef struct {                      // Holds key characteristics of an individual plant
   unsigned char species[10];      // String holding plant species name
   uint8_t sensorPin;              // Analog Input Pin for Plant's moisture sensor
   uint16_t moistureLevel;         // Most recently logged moisture level
 } Plant;
+
 
 #endif // MAIN_H
