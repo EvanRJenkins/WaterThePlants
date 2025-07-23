@@ -18,6 +18,7 @@
 #define PLANTS_IN_GARDEN 2                    // Adjust depending on # of plants currently in garden
 #define FLOW_RATE 562                         // Volumetric flow rate of pump in L/ms
 #define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for Flow Check to pass
+#define FLOW_TIMEOUT_MS 5000                  // 5000ms or 5 second timeout
 
 
 /* Mask Aliases */
@@ -104,6 +105,7 @@ Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
 uint8_t currentPlantIndex;
 
+uint32_t g_timeoutStart;
 
 /* Startup functions */
 
@@ -178,6 +180,8 @@ int main(void) {
 
       case START_WATERING:
 
+        g_timeoutStart = g_msCounter; // Record start time for timeout
+        
         currentState = startPump();
         
         break;
@@ -189,7 +193,12 @@ int main(void) {
           g_isrFlags &= ~NEW_PULSE_DATA;              // Clear the flag that there is new pulse data
           if (g_pulseDuration < FLOW_CHECK_SETPOINT) {
             currentState = WATERING;
-          }
+          }                                      
+        }
+        
+        else if ((g_msCounter - g_timeoutStart) > FLOW_TIMEOUT_MS) {  // True if 5 seconds before flow check passes
+            stopPump();                                               // Turn the pump off for safety
+            currentState = ERROR; 
         }
         
         break;
@@ -197,7 +206,7 @@ int main(void) {
 
       case WATERING:
 
-        if (!(TCCR0B & (1 << CS00))) {  // True if no clock is selected
+        if (!(TCCR0B & ((1 << CS02) | (1 << CS01) | (1 << CS00)))) {  // True if no clock is selected
         
           TCCR0B |= (1 << CS00);        // Select I/Oclk for Timer/Counter0 (Start it)
         }
@@ -212,15 +221,17 @@ int main(void) {
       case STOP_WATERING:
 
         currentState = stopPump();
-
+        
         TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00));  // Select no clock for Timer/Counter0
+        
         TCNT0 = 0;                                             // Clear Timer/Counter0 data register
         
         break;
       
+      
       case LOG_POST:
         
-         if (currentPlantIndex < PLANTS_IN_GARDEN) {
+        if (currentPlantIndex < PLANTS_IN_GARDEN) {
           currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
         }
         
@@ -284,6 +295,8 @@ void regConfig() {
   EIMSK |= (1 << INT0);                                 // Enable the INT0 external interrupt
   
   /* Initialize Timer/Counter1 (ms) */
+  TCCR1A = 0;                                           // Clear Timer/Counter1 Control Registers
+  TCCR1B = 0;                                           // Clear Timer/Counter1 Control Registers
   TCCR1B |= (1 << WGM12);                               // Set CTC mode for Timer/Counter1
   TCCR1B |= (1 << CS11) | (1 << CS10);                  // Set prescaler to 64
   OCR1A = 249;                                          // Set the compare match register for 1ms tick
@@ -368,13 +381,3 @@ state_t stopPump() {
   
   return LOG_POST;
 }
-
-
-bool flowCheck(uint8_t passTime, uint8_t counter) {
-  uint32_t firstPulse = counter;
-  uint8_t
-  {
-  
-  }
-}
-
