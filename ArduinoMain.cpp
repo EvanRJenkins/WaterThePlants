@@ -215,7 +215,7 @@ int main(void) {
 
         currentState = stopPump();
 
-        TCCR0B &= ~TIMER0_CLOCK_MASK;  // Select no clock for Timer/Counter0
+        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00));  // Select no clock for Timer/Counter0
         TCNT0 = 0;                                             // Clear Timer/Counter0 data register
         
         break;
