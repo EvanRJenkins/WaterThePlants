@@ -10,7 +10,13 @@
 #define ADC (1 << 1)     // Bit 1 is ADC complete
 
 
+/* Constants dependent of physical setup */
+
 #define PLANTS_IN_GARDEN 2  // Adjust depending on # of plants currently in garden
+
+
+/* Pin aliases (Arduino Uno R3) */
+
 #define AI0 PC0
 #define AI1 PC1
 #define AI2 PC2
@@ -22,12 +28,14 @@
 
 /* ISR Handler Macros */
 
-ISR (PCINT0_vect) {  // Define Pin change interrupt handler for pin PB0 (D8)
-  g_isrFlags |= PCINT0;  // To-Do: Add interrupt flag and sequence for pin change 'time to water' signal
+ISR (PCINT0_vect) {   // Interrupt handler for pin change at PB0 (D8)
+  
+  g_isrFlags |= PCINT0;
+
 }
 
-ISR (ADC_vect) {            // Define ADC conversion complete interrupt handler
-  g_isrFlags |= ADC;  // Set flag that new ADC data is availiable
+ISR (ADC_vect) {      // Interrupt handler for ADC conversion complete
+  g_isrFlags |= ADC;  // Flag new data availiable
 }
 
 
@@ -35,22 +43,22 @@ ISR (ADC_vect) {            // Define ADC conversion complete interrupt handler
 
 typedef enum State {  // Enum for state machine
   IDLE,               // Power down, only exit via interrupt
-  LOG_PRE,            // Log before watering
-  WAITING_FOR_ADC,
+  LOG_PRE,            // Record moisture of currentPlantIndex Plant
+  WAITING_FOR_ADC,    // Wait for new data, increment currentPlantIndex, go to LOG_PRE
   WATERING,           // Send water to target plant(s)
   LOG_POST,           // Log after watering
   ERROR               // System fault, block all tasks until error ack
 } state_t;
 
-typedef struct {                         // Holds key characteristics of an individual plant
-  unsigned char species[10];             // String holding plant species name
-  uint8_t sensorPin;                     // Analog Input Pin for Plant's moisture sensor
-  uint16_t moistureLevel;                // Most recently logged moisture level
+typedef struct {                   // Holds key characteristics of an individual plant
+  unsigned char species[10];       // String holding plant species name
+  uint8_t sensorPin;               // Analog Input Pin for Plant's moisture sensor
+  uint16_t moistureLevel;          // Most recently logged moisture level
   uint8_t targetMoistureRange[2];  // Indices define bounds of % range for ideal soil saturation
 } Plant;
 
 
-/* Global Variables */
+/* Global variables */
 
 volatile uint8_t g_isrFlags = 0;  // Bitfield holding all ISR flags
 
@@ -74,6 +82,8 @@ void regConfig();      // Subfunction of sysInit for Register configurations
 
 uint16_t adcRecord(uint8_t targetPin);
 
+
+/* Main */
 
 int main(void) {
   
@@ -117,14 +127,18 @@ int main(void) {
           g_isrFlags &= ~ADC;
           currentState = LOG_PRE;
         }
-        break;                // Stay here until ADC complete interrupt
+        
+        break;  // Stay here until ADC complete interrupt
 
 
       case WATERING:
 
         // adjust watering sequence
+        
         // water target plant(s)
+        
         // update state
+        
         break;
 
 
@@ -136,9 +150,13 @@ int main(void) {
 
 
       case ERROR:
+        
         // perform any fail safety actions
+        
         // wait for error to clear
+        
         // update state  
+        
         break;
     }
   }
