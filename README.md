@@ -14,7 +14,7 @@ Hardware Requirements
 
   MCU: AVR Microcontroller (like an ATmega328P on an Arduino Uno).
   Sensors: 1x Water Flow Sensor, 1x Push Button, Multiple Analog Soil Moisture Sensors.
-  Actuator: 1x Water Pump with a driver (like a MOSFET or relay).
+  Actuator: 1x Water Pump with a driver (my implementation uses a relay).
 
 Pinout Configuration
 
@@ -31,9 +31,9 @@ Pinout Configuration
     Notes: External interrupt on falling edge. (Probably wired to a push button)
 
   Function: Pump Control
-    Microcontroller Pin: PD2
-    Arduino Uno Pin: D2
-    Notes: WARNING: Code conflict. Pump and Flow Sensor share this pin.
+    Microcontroller Pin: PD3
+    Arduino Uno Pin: D3
+    Notes: Physical orientation is designed to stop water flow when pump is not running (without a valve).
 
   Function: Moisture Sensor #1
     Microcontroller Pin: PC0 (ADC0)
