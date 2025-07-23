@@ -3,7 +3,8 @@
 
 void regConfig() {
   
-  DDRB &= ~(1 << DDB0);                         // Set pin D8 direction as input
+  DDRB &= ~(1 << DDB0);                         // Set trigger pin direction as input
+  DDRD &= ~(1 << FLOW_SENSOR_PIN);              // Set flow sensor pin data direction to input
   PORTB |= (1 << PORTB0);                       // Enable pull-up on pin D8
   DDRD |= (1 << PUMP_PIN);                      // Set pump pin data direction to output
 
