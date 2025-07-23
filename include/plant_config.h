@@ -3,6 +3,7 @@
 
 #include "main.h"
 
+
 /* Adjust these constants for your physical setup */
 
 #define PLANTS_IN_GARDEN 2            // Adjust depending on # of plants currently in garden
@@ -11,7 +12,7 @@
 #define FLOW_TIMEOUT_MS 5000          // 5000ms or 5 second timeout
 
 
-/* External declarations for global variables */
+/* Extern declarations for global variables */
 
 extern Plant plantList[PLANTS_IN_GARDEN];
 
@@ -19,5 +20,6 @@ extern Plant plantList[PLANTS_IN_GARDEN];
 /* Function Prototypes */
 
 void definePlants();
+
 
 #endif // PLANT_CONFIG_H
