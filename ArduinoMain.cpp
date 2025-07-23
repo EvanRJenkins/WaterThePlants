@@ -1,8 +1,13 @@
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+
+/* Interrupt bitfield bits */
+
+#define PCINT0 (1 << 0)  // Bit 0 is PCINT0
+#define ADC (1 << 1)     // Bit 1 is ADC complete
 
 
 #define PLANTS_IN_GARDEN 2  // Adjust depending on # of plants currently in garden
@@ -18,11 +23,11 @@
 /* ISR Handler Macros */
 
 ISR (PCINT0_vect) {  // Define Pin change interrupt handler for pin PB0 (D8)
-  ;  // To-Do: Add interrupt flag and sequence for pin change 'time to water' signal
+  g_isrFlags |= PCINT0;  // To-Do: Add interrupt flag and sequence for pin change 'time to water' signal
 }
 
 ISR (ADC_vect) {            // Define ADC conversion complete interrupt handler
-  newDataAvailable = true;  // Set flag that new ADC data is availiable
+  g_isrFlags |= ADC;  // Set flag that new ADC data is availiable
 }
 
 
@@ -39,79 +44,97 @@ typedef enum State {  // Enum for state machine
 
 typedef struct {                         // Holds key characteristics of an individual plant
   unsigned char species[10];             // String holding plant species name
-  unsigned char sensorPin;               // Analog Input Pin for Plant's moisture sensor
-  unsigned int moistureLevel;            // Most recently logged moisture level
-  unsigned char targetMoistureRange[2];  // Indices define bounds of % range for ideal soil saturation
+  uint8_t sensorPin;                     // Analog Input Pin for Plant's moisture sensor
+  uint16_t moistureLevel;                // Most recently logged moisture level
+  uint8_t targetMoistureRange[2];  // Indices define bounds of % range for ideal soil saturation
 } Plant;
 
 
 /* Global Variables */
 
+volatile uint8_t g_isrFlags = 0;  // Bitfield holding all ISR flags
+
 state_t currentState;  // Holds current system state
 
 Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
-unsigned char currentPlantIndex;
-
-volatile bool newDataAvailable = false;  // Flag to be triggered by ADC complete interrupt
+uint8_t currentPlantIndex;
 
 
 /* Startup functions */
 
 state_t sysInit();     // Initializes registers and variables
 
-void definePlants();   // Subroutine of sysInit for Plant definitions
+void definePlants();   // Subfunction of sysInit for Plant definitions
 
-void regConfig();      // Subroutine of sysInit for Register configurations
+void regConfig();      // Subfunction of sysInit for Register configurations
 
 
 /* State Functions */
 
-unsigned int adcRecord(unsigned char targetPin);
+uint16_t adcRecord(uint8_t targetPin);
 
 
 int main(void) {
   
   currentState = sysInit();  // Initialize system
 
-  while (1) {  // State machine loop
-    
+  while (1) {                // State machine loop
     switch (currentState) {
-      
+
+
       case IDLE:  
-        // sleep();             // Call AVR Sleep instruction
+
+        if (g_isrFlags & PCINT0) {
+          currentState = LOG_PRE;
+          g_isrFlags &= ~PCINT0;
+        }
+          
+        else {
+          sleep();             // Call AVR Sleep instruction
+        }
+          
         break;
+
       
       case LOG_PRE:
         if (currentPlantIndex < PLANTS_IN_GARDEN) {
           currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
         }
+        
         else {
           currentState = WATERING;
           currentPlantIndex = 0;
         }
         break;
-      
+
+
       case WAITING_FOR_ADC:
-        if (newDataAvailable) {
-          plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADCL and ADCH into the lower and upper halves of current plant's moistureLevel
-          newDataAvailable = false;
+
+        if (g_isrFlags & ADC) {    // Evaluates as true if ADC flag bit is set
+          plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
           ++currentPlantIndex;
+          g_isrFlags &= ~ADC;
           currentState = LOG_PRE;
         }
         break;                // Stay here until ADC complete interrupt
-      
+
+
       case WATERING:
+
         // adjust watering sequence
         // water target plant(s)
         // update state
         break;
-      
+
+
       case LOG_POST:
+        
         // log desired data
         // update state
         break;
-     
+
+
       case ERROR:
         // perform any fail safety actions
         // wait for error to clear
@@ -145,9 +168,9 @@ void regConfig() {
   PORTB |= (1 << PORTB0);   // Enable pull-up on pin D8
   SMCR |= (1 << SM1);       // Set Sleep Mode Control Register to Power Down Mode
   DDRD |= (1 << PUMP_PIN);  // Set pump pin data direction to output
-  ADCSRA |= (1 << ADIE);    // Enable 'ADC complete' interrupt
-  
+  ADCSRA |= (1 << ADIE);    // Enable 'ADC complete' interrupt  
 }
+
 
 state_t sysInit() {
   
@@ -163,34 +186,41 @@ state_t sysInit() {
 }
 
 
-state_t adcRecord(unsigned char targetPin) {
+state_t adcRecord(uint8_t targetPin) {    // Enables ADC an starts conversion for targetPin
 
 /* Set MUX2..0 to ADC channel of targetPin */
  switch (targetPin) {
-  case AI0:  // 000
+  
+   case AI0:  // 000
     ADMUX &= ~((1 << MUX2) | (1 << MUX1) | (1 << MUX0));
     break;
-  case AI1:  // 001
+  
+   case AI1:  // 001
     ADMUX &= ~((1 << MUX2) | (1 << MUX1));
     ADMUX |= (1 << MUX0);
     break;
-  case AI2:  // 010
+  
+   case AI2:  // 010
     ADMUX &= ~((1 << MUX2) | (1 << MUX0));
     ADMUX |= (1 << MUX1);
     break;
-  case AI3:  // 011
+  
+   case AI3:  // 011
     ADMUX &= ~(1 << MUX2);
     ADMUX |= (1 << MUX1) | (1 << MUX0);
     break;
-  case AI4:  // 100
+  
+   case AI4:  // 100
     ADMUX &= ~((1 << MUX1) | (1 << MUX0));
     ADMUX |= (1 << MUX2);
     break;
-  case AI5:  // 101
+  
+   case AI5:  // 101
     ADMUX &= ~(1 << MUX1);
     ADMUX |= (1 << MUX2) | (1 << MUX0);
     break;
-  default: // Default to channel 0
+  
+   default: // Default to channel 0
     ADMUX &= ~((1 << MUX2) | (1 << MUX1) | (1 << MUX0));
     break;
  }
