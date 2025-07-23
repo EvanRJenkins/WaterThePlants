@@ -133,16 +133,15 @@ int main(void) {
 
       case WAITING_FOR_ADC:
 
-        if ((g_isrFlags & ADC)) {    // Evaluates as true if ADC flag bit is set
+        if (g_isrFlags & ADC) {                               // Evaluates as true if ADC flag bit is set
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
           ++currentPlantIndex;
           g_isrFlags &= ~ADC;
-          if ((g_isrFlags & ~(WTRDONE)) {
+          if (g_isrFlags & ~(WTRDONE)) {
             currentState = LOG_PRE;
           }
-        }
-        else {
-          currentState = LOG_POST;
+          else {
+            currentState = LOG_POST;
           }
         }
         
@@ -179,7 +178,7 @@ int main(void) {
 
         currentState = stopPump();
 
-        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00))  // Select no clock for Timer/Counter0
+        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00)); // Select no clock for Timer/Counter0
         TCNT0 &= ~TCNT0;                                      // Clear Timer/Counter0 data register
         
         break;
