@@ -6,7 +6,6 @@ void regConfig() {
   DDRB &= ~(1 << DDB0);                         // Set pin D8 direction as input
   PORTB |= (1 << PORTB0);                       // Enable pull-up on pin D8
   DDRD |= (1 << PUMP_PIN);                      // Set pump pin data direction to output
-  DDRD |= (1 << FLOW_SENSOR_PIN);               // Set pump pin data direction to output
 
   /* Sleep mode */
   // SMCR |= (1 << SM1);                       // Set Sleep Mode Control Register to Power Down Mode
