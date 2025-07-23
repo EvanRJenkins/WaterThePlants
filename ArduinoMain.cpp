@@ -4,15 +4,20 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+
 /* Interrupt bitfield bits */
 
 #define PCINT0 (1 << 0)  // Bit 0 is PCINT0
 #define ADC (1 << 1)     // Bit 1 is ADC complete
 #define WTRDONE (1 << 2) // Bit 2 is watering done
+#define NEW_PULSE_DATA (1 << 3) // Bit 3 is new pulse data ready
 
-/* Constants dependent of physical setup */
+
+/* Adjust the constants for your physical setup */
 
 #define PLANTS_IN_GARDEN 2  // Adjust depending on # of plants currently in garden
+#define FLOW_RATE 562                                            // Volumetric flow rate of pump in L/ms
+static const uint8_t FLOW_CHECK_SETPOINT = (FLOW_RATE * 2);      // Minimum time (ms) between pulses for flowCheck to pass
 
 
 /* Pin aliases (Arduino Uno R3) */
@@ -28,18 +33,35 @@
 
 /* ISR Handler Macros */
 
-ISR (PCINT0_vect) {   // Interrupt handler for pin change at PB0 (D8)
-  
+ISR (PCINT0_vect) {          // Interrupt handler for pin change at PB0 (D8)
   g_isrFlags |= PCINT0;
-
 }
 
-ISR (ADC_vect) {      // Interrupt handler for ADC conversion complete
-  g_isrFlags |= ADC;  // Flag new data availiable
+ISR (ADC_vect) {             // Interrupt handler for ADC conversion complete
+  g_isrFlags |= ADC;         // Flag new data availiable
 }
 
 ISR (TIMER0_OVF_vect) {      // Interrupt handler for Timer/Counter0 Overflow
   g_isrFlags |= WTRDONE;
+}
+
+ISR(TIMER1_COMPA_vect) {     // Interrupt Handler for Timer/Counter1 compare (ms)
+  g_msCounter++;
+}
+
+ISR(INT0_vect) {
+  static bool waitForSecondPulse = false;
+  static uint32_t firstPulseTime;           // msCounter value during first pulse
+
+  if (!waitForSecondPulse) {                // First pulse
+    firstPulseTime = g_msCounter;           // Record start time
+    waitForSecondPulse = true;
+  } 
+  else {  // Second Pulse
+    g_pulseDuration = g_msCounter - firstPulseTime;  // Store duration
+    g_isrFlags |= NEW_PULSE_DATA;                  // Set flag that data is ready
+    waitForSecondPulse = false;                    // Reset for the next pair of pulses
+  }
 }
 
 
@@ -48,7 +70,7 @@ ISR (TIMER0_OVF_vect) {      // Interrupt handler for Timer/Counter0 Overflow
 typedef enum State {  // Enum for state machine
   IDLE,               // Power down, only exit via interrupt
   LOG_PRE,            // Record moisture of currentPlantIndex Plant
-  WAITING_FOR_ADC,    // Wait for new data, increment currentPlantIndex, go to LOG_PRE
+  WAIT_FOR_ADC,    // Wait for new data, increment currentPlantIndex, go to LOG_PRE
   START_WATERING,     // Send water to all plants
   WAIT_FOR_FLOW,      // Delay until flow checkpoint is reached, ERROR after timeout
   WATERING,           // Water flowing to plants
@@ -67,7 +89,11 @@ typedef struct {                   // Holds key characteristics of an individual
 
 /* Global variables */
 
-volatile uint8_t g_isrFlags = 0;  // Bitfield holding all ISR flags
+volatile uint8_t g_isrFlags = 0;    // Bitfield holding all ISR flags
+
+volatile uint32_t g_msCounter = 0;  // ms counter
+
+volatile uint32_t g_pulseDuration;  // difference between most recent two pulses
 
 state_t currentState;  // Holds current system state
 
@@ -75,7 +101,6 @@ Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
 uint8_t currentPlantIndex;
 
-bool flowCheckpoint = false;
 
 /* Startup functions */
 
@@ -93,6 +118,8 @@ state_t adcRecord(uint8_t targetPin);
 state_t startPump();
 
 state_t stopPump();
+
+bool flowCheck(uint8_t passTime);
 
 
 /* Main */
@@ -131,7 +158,7 @@ int main(void) {
         break;
 
 
-      case WAITING_FOR_ADC:
+      case WAIT_FOR_ADC:
 
         if (g_isrFlags & ADC) {                               // Evaluates as true if ADC flag bit is set
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
@@ -157,8 +184,11 @@ int main(void) {
 
       case WAIT_FOR_FLOW:
 
-        if (flowCheckpoint) {
-          currentState = WATERING;
+        if (g_isrFlags & NEW_PULSE_DATA) {
+          g_isrFlags &= ~NEW_PULSE_DATA;              // Clear the flag that there is new pulse data
+          if (g_pulseDuration < FLOW_CHECK_SETPOINT) {
+            currentState = WATERING;
+          }
         }
         
         break;
@@ -166,11 +196,15 @@ int main(void) {
 
       case WATERING:
 
-        TCCR0B |= (1 << CS00);  // Select I/Oclk for Timer/Counter0 (Start it)
-
+        if (TCCR0B &= ~(1 << CS00)) {
+        
+          TCCR0B |= (1 << CS00);  // Select I/Oclk for Timer/Counter0 (Start it)
+        }
+        
         if (g_isrFlags & WTRDONE) {
           currentState = STOP_WATERING;
         }
+        
         break;
 
 
@@ -238,10 +272,24 @@ void regConfig() {
   ADCSRA |= (1 << ADIE);                                // Enable 'ADC complete' interrupt  
   TIMSK0 |= (1 << TOIE0);                               // Enable Timer/Counter0 overflow interrupt
   
-  /* Initialize Timer/Counter0 */
+  /* Initialize Timer/Counter0 (watering) */
   TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00))  // Select no clock for Timer/Counter0
   TCNT0 &= ~TCNT0;                                      // Clear Timer/Counter0 data register
+
+  /* Configure External Interrupt INT0 for Flow Sensor */
+  DDRD &= ~(1 << DDD2);                                 // Set Pin D2 as input
+  PORTD |= (1 << PORTD2);                               // Enable pull-up resistor for Pin D2
+  EICRA |= (1 << ISC01);                                // Configure INT0 to trigger on a falling edge
+  EIMSK |= (1 << INT0);                                 // Enable the INT0 external interrupt
+  
+  /* Initialize Timer/Counter1 (ms) */
+  TCCR1B |= (1 << WGM12);                               // Set CTC mode for Timer/Counter1
+  TCCR1B |= (1 << CS11) | (1 << CS10);                  // Set prescaler to 64
+  OCR1A = 249;                                          // Set the compare match register for 1ms tick
+  TIMSK1 |= (1 << OCIE1A);                              // Enable the timer compare interrupt
+
 }
+
 
 
 state_t sysInit() {
@@ -301,7 +349,7 @@ state_t adcRecord(uint8_t targetPin) {    // Enables ADC an starts conversion fo
   ADCSRA |= (1 << ADEN);  // Enable ADC (Set ADEN)
   ADCSRA |= (1 << ADSC);  // Start ADC conversion (Set ADSC bit)
 
-  return WAITING_FOR_ADC;
+  return WAIT_FOR_ADC;
 }
 
 
@@ -319,3 +367,13 @@ state_t stopPump() {
   
   return LOG_POST;
 }
+
+
+bool flowCheck(uint8_t passTime, uint8_t counter) {
+  uint32_t firstPulse = counter;
+  uint8_t
+  {
+  
+  }
+}
+
