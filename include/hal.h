@@ -13,7 +13,8 @@
 #define AI3 PC3
 #define AI4 PC4
 #define AI5 PC5
-#define PUMP_PIN PD2
+#define FLOW_SENSOR_PIN PD2
+#define PUMP_PIN PD3
 
 
 /* Function Prototypes */
