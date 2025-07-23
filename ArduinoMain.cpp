@@ -7,21 +7,18 @@
 
 /* Interrupt bitfield bits */
 
-#define PCINT0 (1 << 0)         // Bit 0 is PCINT0
-#define ADC (1 << 1)            // Bit 1 is ADC complete
-#define WTRDONE (1 << 2)        // Bit 2 is watering done
-#define NEW_PULSE_DATA (1 << 3) // Bit 3 is new pulse data ready
+#define PCINT0 (1 << 0)                       // Bit 0 is PCINT0
+#define ADC (1 << 1)                          // Bit 1 is ADC complete
+#define WTRDONE (1 << 2)                      // Bit 2 is watering done
+#define NEW_PULSE_DATA (1 << 3)               // Bit 3 is new pulse data ready
 
 
-/* Adjust the constants for your physical setup */
+/* Adjust these constants for your physical setup */
 
 #define PLANTS_IN_GARDEN 2                    // Adjust depending on # of plants currently in garden
 #define FLOW_RATE 562                         // Volumetric flow rate of pump in L/ms
 #define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for Flow Check to pass
 #define FLOW_TIMEOUT_MS 5000                  // 5000ms or 5 second timeout
-
-
-/* Mask Aliases */
 
 
 /* Pin aliases (Arduino Uno R3) */
@@ -37,34 +34,34 @@
 
 /* ISR Handler Macros */
 
-ISR (PCINT0_vect) {          // Interrupt handler for pin change at PB0 (D8)
+ISR (PCINT0_vect) {          // Handler for pin change at PB0 (D8)
   g_isrFlags |= PCINT0;
 }
 
-ISR (ADC_vect) {             // Interrupt handler for ADC conversion complete
+ISR (ADC_vect) {             // Handler for ADC conversion complete
   g_isrFlags |= ADC;         // Flag new data availiable
 }
 
-ISR (TIMER0_OVF_vect) {      // Interrupt handler for Timer/Counter0 Overflow
+ISR (TIMER0_OVF_vect) {      // Handler for Timer/Counter0 Overflow
   g_isrFlags |= WTRDONE;
 }
 
-ISR(TIMER1_COMPA_vect) {     // Interrupt Handler for Timer/Counter1 compare (ms)
+ISR(TIMER1_COMPA_vect) {     // Handler for Timer/Counter1 compare (ms)
   g_msCounter++;
 }
 
-ISR(INT0_vect) {
+ISR(INT0_vect) {            // Handler for flow sensor pulse
   static bool waitForSecondPulse = false;
-  static uint32_t firstPulseTime;           // msCounter value during first pulse
+  static uint32_t firstPulseTime;                    // msCounter value at first pulse
 
-  if (!waitForSecondPulse) {                // First pulse
-    firstPulseTime = g_msCounter;           // Record start time
+  if (!waitForSecondPulse) {                         // First pulse
+    firstPulseTime = g_msCounter;                    // Record start time
     waitForSecondPulse = true;
   } 
   else {  // Second Pulse
     g_pulseDuration = g_msCounter - firstPulseTime;  // Store duration
-    g_isrFlags |= NEW_PULSE_DATA;                  // Set flag that data is ready
-    waitForSecondPulse = false;                    // Reset for the next pair of pulses
+    g_isrFlags |= NEW_PULSE_DATA;                    // Set flag that data is ready
+    waitForSecondPulse = false;                      // Reset for the next pair of pulses
   }
 }
 
@@ -72,19 +69,19 @@ ISR(INT0_vect) {
 /* Type Definitions */
 
 typedef enum State {  // Enum for state machine
-  IDLE,               // Power down, only exit via interrupt
-  LOG_PRE,            // Record moisture of currentPlantIndex Plant
-  WAIT_FOR_ADC,    // Wait for new data, increment currentPlantIndex, go to LOG_PRE
-  START_WATERING,     // Send water to all plants
-  WAIT_FOR_FLOW,      // Delay until flow checkpoint is reached, ERROR after timeout
-  WATERING,           // Water flowing to plants
-  STOP_WATERING,      // Stop watering, transition to LOG_POST
-  LOG_POST,           // Log after watering
-  ERROR               // System fault, block all tasks until error ack
+  IDLE,                       // Power down, only exit via interrupt
+  LOG_PRE,                    // Record moisture of currentPlantIndex Plant
+  WAIT_FOR_ADC,               // Wait for new data, increment currentPlantIndex, go to LOG_PRE
+  START_WATERING,             // Send water to all plants
+  WAIT_FOR_FLOW,              // Delay until flow checkpoint is reached, ERROR after timeout
+  WATERING,                   // Water flowing to plants
+  STOP_WATERING,              // Stop watering, transition to LOG_POST
+  LOG_POST,                   // Log after watering
+  ERROR                       // System fault, block all tasks until error ack
 } state_t;
 
 
-typedef struct {                   // Holds key characteristics of an individual plant
+typedef struct {  // Holds key characteristics of an individual plant
   unsigned char species[10];       // String holding plant species name
   uint8_t sensorPin;               // Analog Input Pin for Plant's moisture sensor
   uint16_t moistureLevel;          // Most recently logged moisture level
@@ -97,15 +94,16 @@ volatile uint8_t g_isrFlags = 0;    // Bitfield holding all ISR flags
 
 volatile uint32_t g_msCounter = 0;  // ms counter
 
-volatile uint32_t g_pulseDuration;  // difference between most recent two pulses
+volatile uint32_t g_pulseDuration;  // Difference between most recent two pulses
 
-state_t currentState;  // Holds current system state
+state_t currentState;               // Current system state
 
 Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
-uint8_t currentPlantIndex;
+uint8_t currentPlantIndex;          // Index value of current plant during log process
 
 uint32_t g_timeoutStart;
+
 
 /* Startup functions */
 
@@ -118,58 +116,64 @@ void regConfig();      // Subfunction of sysInit for Register configurations
 
 /* State Functions */
 
-state_t adcRecord(uint8_t targetPin);
+state_t adcRecord(uint8_t targetPin);  // Starts the ADC at the channel of pin passed as targetPin
 
-state_t startPump();
+state_t startPump();                   // Starts the water tank pump (pin D8)
 
-state_t stopPump();
+state_t stopPump();                    // Stops the water tank pump
 
 
 /* Main */
 
 int main(void) {
   
-  currentState = sysInit();  // Initialize system
+  currentState = sysInit();  // sysInit() returns a the startup state
 
   while (1) {                // State machine loop
-    switch (currentState) {
-
+    
+    switch (currentState) {  // State machine switch
 
       case IDLE:  
 
-        if (g_isrFlags & PCINT0) {
+        if (g_isrFlags & PCINT0) {  // Start State sequence if PCINT0 flag
           currentState = LOG_PRE;
           g_isrFlags &= ~PCINT0;
         }
           
         else {
-          sleep();             // Call AVR Sleep instruction
+          sleep();                  // Enter power down mode until PCINT0
         }
           
         break;
 
       
       case LOG_PRE:
-        if (currentPlantIndex < PLANTS_IN_GARDEN) {
-          currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
+        
+        if (currentPlantIndex < PLANTS_IN_GARDEN) {  // Two-state loop until all plants logged
+          currentState = adcRecord(plantList[currentPlantIndex].sensorPin);  // adcRecord() returns WAIT_FOR_ADC on success
         }
         
-        else {
+        else {  // Logging complete, start watering
           currentState = START_WATERING;
-          currentPlantIndex = 0;
+          currentPlantIndex = 0;  // Reset for reuse in LOG_POST)
         }
+       
         break;
 
 
       case WAIT_FOR_ADC:
 
-        if (g_isrFlags & ADC) {                               // Evaluates as true if ADC flag bit is set
+        if (g_isrFlags & ADC) {                               // True if ADC complete flag
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
+          
           ++currentPlantIndex;
+          
           g_isrFlags &= ~ADC;
+          
           if (!(g_isrFlags & WTRDONE)) {
             currentState = LOG_PRE;
           }
+          
           else {
             currentState = LOG_POST;
           }
@@ -180,19 +184,19 @@ int main(void) {
 
       case START_WATERING:
 
-        g_timeoutStart = g_msCounter; // Record start time for timeout
+        g_timeoutStart = g_msCounter;  // Record start time for timeout
         
-        currentState = startPump();
+        currentState = startPump();    // startPump() returns WAIT_FOR_FLOW on success
         
         break;
 
 
       case WAIT_FOR_FLOW:
 
-        if (g_isrFlags & NEW_PULSE_DATA) {
-          g_isrFlags &= ~NEW_PULSE_DATA;              // Clear the flag that there is new pulse data
-          if (g_pulseDuration < FLOW_CHECK_SETPOINT) {
-            currentState = WATERING;
+        if (g_isrFlags & NEW_PULSE_DATA) {              // If new pulse data is availiable
+          g_isrFlags &= ~NEW_PULSE_DATA;                // Clear the flag that there is new pulse data
+          if (g_pulseDuration < FLOW_CHECK_SETPOINT) {  // If pulse rate is fast enough, water flowing
+            currentState = WATERING;                    // Start counting watering time
           }                                      
         }
         
@@ -220,7 +224,7 @@ int main(void) {
 
       case STOP_WATERING:
 
-        currentState = stopPump();
+        currentState = stopPump();    // stopPump() returns LOG_POST on success
         
         TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00));  // Select no clock for Timer/Counter0
         
@@ -231,11 +235,11 @@ int main(void) {
       
       case LOG_POST:
         
-        if (currentPlantIndex < PLANTS_IN_GARDEN) {
+        if (currentPlantIndex < PLANTS_IN_GARDEN) {  // Same two-state loop as LOG_PRE
           currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
         }
         
-        else {
+        else {  // Logging done, housekeeping and go to IDLE
           g_isrFlags = 0x0;
           currentPlantIndex = 0;
           currentState = IDLE;
