@@ -38,8 +38,8 @@ ISR (ADC_vect) {      // Interrupt handler for ADC conversion complete
   g_isrFlags |= ADC;  // Flag new data availiable
 }
 
-ISR (//custom watering done interrupt) {      // Interrupt handler for WTRDONE
-  g_isrFlags |= WTRDONE;  // Flag new data availiable
+ISR (TIMER0_OVF_vect) {      // Interrupt handler for Timer/Counter0 Overflow
+  g_isrFlags |= WTRDONE;
 }
 
 
@@ -75,6 +75,7 @@ Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
 uint8_t currentPlantIndex;
 
+bool flowCheckpoint = false;
 
 /* Startup functions */
 
@@ -139,8 +140,9 @@ int main(void) {
           if ((g_isrFlags & ~(WTRDONE)) {
             currentState = LOG_PRE;
           }
-          else {
-            currentState = LOG_POST;
+        }
+        else {
+          currentState = LOG_POST;
           }
         }
         
@@ -165,7 +167,7 @@ int main(void) {
 
       case WATERING:
 
-        //start timer
+        TCCR0B |= (1 << CS00);  // Select I/Oclk for Timer/Counter0 (Start it)
 
         if (g_isrFlags & WTRDONE) {
           currentState = STOP_WATERING;
@@ -177,6 +179,9 @@ int main(void) {
 
         currentState = stopPump();
 
+        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00))  // Select no clock for Timer/Counter0
+        TCNT0 &= ~TCNT0;                                      // Clear Timer/Counter0 data register
+        
         break;
       
       case LOG_POST:
@@ -223,11 +228,21 @@ void definePlants() {
 
 void regConfig() {
   
-  DDRB &= ~(1 << DDB0);     // Set pin D8 as input
-  PORTB |= (1 << PORTB0);   // Enable pull-up on pin D8
-  SMCR |= (1 << SM1);       // Set Sleep Mode Control Register to Power Down Mode
-  DDRD |= (1 << PUMP_PIN);  // Set pump pin data direction to output
-  ADCSRA |= (1 << ADIE);    // Enable 'ADC complete' interrupt  
+  DDRB &= ~(1 << DDB0);                                 // Set pin D8 direction as input
+  PORTB |= (1 << PORTB0);                               // Enable pull-up on pin D8
+  SMCR |= (1 << SM1);                                   // Set Sleep Mode Control Register to Power Down Mode
+  DDRD |= (1 << PUMP_PIN);                              // Set pump pin data direction to output
+
+  /* Sleep mode */
+  SMCR |= (1 << SM1);                                   // Set Sleep Mode Control Register to Power Down Mode
+  
+  /* Enable interrupts */
+  ADCSRA |= (1 << ADIE);                                // Enable 'ADC complete' interrupt  
+  TIMSK0 |= (1 << TOIE0);                               // Enable Timer/Counter0 overflow interrupt
+  
+  /* Initialize Timer/Counter0 */
+  TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00))  // Select no clock for Timer/Counter0
+  TCNT0 &= ~TCNT0;                                      // Clear Timer/Counter0 data register
 }
 
 
@@ -294,7 +309,7 @@ state_t adcRecord(uint8_t targetPin) {    // Enables ADC an starts conversion fo
 
 state_t startPump() {
   
-  PORTD |= PUMP_PIN;  // Activate tank pump  
+  PORTD |= (1 << PUMP_PIN);  // Activate tank pump  
   
   return WAIT_FOR_FLOW;
 }
@@ -302,7 +317,7 @@ state_t startPump() {
 
 state_t stopPump() {
   
-  PORTD &= ~(PUMP_PIN);  // Deactivate tank pump  
+  PORTD &= ~(1 << PUMP_PIN);  // Deactivate tank pump  
   
   return LOG_POST;
 }
