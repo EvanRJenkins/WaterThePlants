@@ -137,7 +137,7 @@ int main(void) {
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
           ++currentPlantIndex;
           g_isrFlags &= ~ADC;
-          if (g_isrFlags & ~(WTRDONE)) {
+          if (!(g_isrFlags & WTRDONE)) {
             currentState = LOG_PRE;
           }
           else {
@@ -178,8 +178,8 @@ int main(void) {
 
         currentState = stopPump();
 
-        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00)); // Select no clock for Timer/Counter0
-        TCNT0 &= ~TCNT0;                                      // Clear Timer/Counter0 data register
+        TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00));  // Select no clock for Timer/Counter0
+        TCNT0 = 0;                                             // Clear Timer/Counter0 data register
         
         break;
       
@@ -229,7 +229,6 @@ void regConfig() {
   
   DDRB &= ~(1 << DDB0);                                 // Set pin D8 direction as input
   PORTB |= (1 << PORTB0);                               // Enable pull-up on pin D8
-  SMCR |= (1 << SM1);                                   // Set Sleep Mode Control Register to Power Down Mode
   DDRD |= (1 << PUMP_PIN);                              // Set pump pin data direction to output
 
   /* Sleep mode */
