@@ -4,6 +4,7 @@
 #include "main.h"
 #include <avr/io.h>
 
+
 /* Pin aliases (Arduino Uno R3) */
 
 #define AI0 PC0
@@ -12,7 +13,7 @@
 #define AI3 PC3
 #define AI4 PC4
 #define AI5 PC5
-#define PUMP_PIN PD2  // To-do: Allocate pins to peripherals
+#define PUMP_PIN PD2
 
 
 /* Function Prototypes */
