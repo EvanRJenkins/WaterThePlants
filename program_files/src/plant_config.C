@@ -2,16 +2,12 @@
 #include "hal.h"
 #include <string.h>
 
-
 /* Global variable definitions for this module */
-
 Plant plantList[PLANTS_IN_GARDEN];  // Array of all plants
 
-void definePlants() {
-
-
-/* Definition of plants in garden */
-
+/* Plants */
+void definePlants() 
+{
   strcpy(plantList[0].species, "hibiscus");     // Define plantList[0] as "hibiscus"
   plantList[0].sensorPin = AI0;                 // Moisture sensor input pin
   
