@@ -10,14 +10,14 @@
 \
 **Customizable Controls**: Can be triggered via timer or manual input.\
 \
-**Power Efficiency**: Sleeps until watering protocol is activated.\
+**Power Efficiency**: Sleeps until watering protocol is activated.
 
 ## **Hardware Requirements**
 **MCU**: AVR Microcontroller (like an ATmega328P on an Arduino Uno).\
 \
 **Sensors**: 1x Water Flow Sensor, 1x Push Button, 1x Analog Soil Moisture Sensor for each plant.\
 \
-**Actuators**: 1x Water Pump with a driver (my implementation uses a relay).\
+**Actuators**: 1x Water Pump with a driver (my implementation uses a relay).
 
 ## **Pinout Configuration**
 ### *Pins are defined in hal.h*
