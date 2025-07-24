@@ -12,7 +12,6 @@
 /* Extern declarations for global variables */
 extern Plant plantList[PLANTS_IN_GARDEN];
 
-
 /* Function Prototypes */
 void definePlants();
 
