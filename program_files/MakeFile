@@ -1,16 +1,15 @@
 # =============================================================================
-# Makefile for the Automated Plant Watering System
-#
+# Makefile for water_the_plants
 # Target Microcontroller: ATmega328P (Arduino Uno)
 # Toolchain: avr-gcc
 # =============================================================================
 
-# --- Toolchain and Compiler Definitions ---
+# --- Toolchain/Compiler Definitions ---
 CC = avr-gcc
 OBJCOPY = avr-objcopy
 SIZE = avr-size
 
-# --- Project Configuration ---
+# --- Project Config ---
 MCU = atmega328p
 F_CPU = 16000000UL # 16MHz, standard for Arduino Uno
 TARGET = main
@@ -29,14 +28,14 @@ OBJS = $(patsubst $(SRC_DIR)/%.C,%.o,$(SRCS))
 # -I$(INC_DIR) tells the compiler to look for header files in the 'include' directory.
 CFLAGS = -Wall -Os -g -mmcu=$(MCU) -DF_CPU=$(F_CPU) -I$(INC_DIR)
 
-# --- Programmer Configuration (for flashing the chip) ---
+# --- Programmer Config ---
 AVRDUDE = avrdude
 PROGRAMMER = arduino
 PORT = /dev/ttyCOMX # CHANGE THIS to your Arduino's serial port
 BAUD = 115200
 
 # =============================================================================
-# Build Rules (Targets)
+# Build Rules
 # =============================================================================
 
 # --- Default Target: all ---
