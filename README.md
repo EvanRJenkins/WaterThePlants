@@ -24,37 +24,37 @@
 #### Function: Start Trigger
 **Microcontroller Pin**: PB0 (PCINT0)\
 **Arduino Uno Pin**: D8\
-*__Notes__*: *Wakes system from IDLE.*\
+*__Notes__*: *Wakes system from IDLE.*
 
 #### Function: Flow Sensor
 **Microcontroller Pin**: PD2 (INT0)\
 **Arduino Uno Pin**: D2\
-*__Notes__*: *External interrupt on falling edge. (Probably wired to a push button)*\
+*__Notes__*: *External interrupt on falling edge. (Probably wired to a push button)*
 
 #### Function: Pump Control
 **Microcontroller Pin**: PD3\
 **Arduino Uno Pin**: D3\
-*__Notes__*: *Physical orientation is designed to inhibit (without a valve).*\
+*__Notes__*: *Physical orientation is designed to inhibit (without a valve).*
 
 #### Function: Moisture Sensor #1
 **Microcontroller Pin**: PC0 (ADC0)\
 **Arduino Uno Pin**: A0\
-*__Notes__*: *Analog input.*\
+*__Notes__*: *Analog input.*
 
 #### Function: Moisture Sensor #2
 **Microcontroller Pin**: PC1 (ADC1)\
 **Arduino Uno Pin**: A1\
-*__Notes__*: *Analog input.*\
+*__Notes__*: *Analog input.*
 
 ## **Configuration**
 
 ### *Adjust parameters in plant_config.h*
 
         /* Adjust these constants for your physical setup */
-        #define PLANTS_IN_GARDEN 2            // Adjust depending on # of plants currently in garden
-        #define FLOW_RATE 562                 // Volumetric flow rate of pump in L/ms
+        #define PLANTS_IN_GARDEN 2                    // Adjust depending on No. of plants currently in garden
+        #define FLOW_RATE 562                         // Volumetric flow rate of pump in L/ms
         #define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for Flow Check to pass
-        #define FLOW_TIMEOUT_MS 5000          // 5000ms or 5 second timeout
+        #define FLOW_TIMEOUT_MS 5000                  // 5000ms or 5 second timeout
 
 ## **Operation**
 
