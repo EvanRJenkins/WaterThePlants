@@ -5,11 +5,11 @@
 
 ## **System Features**
 
-**Deterministic Design**: Operates as an interrupt-driven state machine.
-**Portability**: Can be configured for different garden setups and plants species.
-**Fail Safety**: Non-blocking architecture with descriptive alerts and timeout conditions.
-**Customizable Controls**: Can be triggered via timer or manual input.
-**Power Efficiency**: Sleeps until watering protocol is activated.
+**Deterministic Design**: Operates as an interrupt-driven state machine.\
+**Portability**: Can be configured for different garden setups and plants species.\
+**Fail Safety**: Non-blocking architecture with descriptive alerts and timeout conditions.\
+**Customizable Controls**: Can be triggered via timer or manual input.\
+**Power Efficiency**: Sleeps until watering protocol is activated.\
 
 ## **Hardware Requirements**
 
