@@ -58,13 +58,13 @@
 
 ## **Operation**
 
-### Connect the hardware.
+1. Connect the hardware.
 
-### Build and flash the code to the device.
+2. Build and flash the code to the device.
 
-### The system will start in an IDLE state.
+3. The system will start in an IDLE state.
 
-### Pressing the start button on pin D8 begins the watering cycle.
+4. Writing HIGH to arduino pin D8 begins the watering cycle.
 
-### The system returns to IDLE when finished.
+5. The system returns to IDLE when finished.
 
