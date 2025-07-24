@@ -3,49 +3,49 @@ Automated Watering System Firmware for Potted Plants
 
 This is firmware for an automated plant watering system using an AVR microcontroller. It uses a state machine to check soil moisture and control a water tank pump.
 
-System Features
+##System Features
 
   State Machine Control: The system runs on a state machine.
   Multi-Plant Support: Can be configured for multiple plants.
   Flow Verification: Uses a flow sensor to confirm the pump is working.
   Low Power: Sleeps in an idle state until needed.
 
-Hardware Requirements
+##Hardware Requirements
 
   MCU: AVR Microcontroller (like an ATmega328P on an Arduino Uno).
   Sensors: 1x Water Flow Sensor, 1x Push Button, Multiple Analog Soil Moisture Sensors.
   Actuator: 1x Water Pump with a driver (my implementation uses a relay).
 
-Pinout Configuration
+##Pinout Configuration
 
   Pins are defined in hal.h.
 
-  Function: Start Trigger
+  ###Function: Start Trigger
     Microcontroller Pin: PB0 (PCINT0)
     Arduino Uno Pin: D8
     Notes: Wakes system from IDLE.
 
-  Function: Flow Sensor
+  ###Function: Flow Sensor
     Microcontroller Pin: PD2 (INT0)
     Arduino Uno Pin: D2
     Notes: External interrupt on falling edge. (Probably wired to a push button)
 
-  Function: Pump Control
+  ###Function: Pump Control
     Microcontroller Pin: PD3
     Arduino Uno Pin: D3
     Notes: Physical orientation is designed to stop water flow when pump is not running (without a valve).
 
-  Function: Moisture Sensor #1
+  ###Function: Moisture Sensor #1
     Microcontroller Pin: PC0 (ADC0)
     Arduino Uno Pin: A0
     Notes: Analog input.
 
-  Function: Moisture Sensor #2
+  ###Function: Moisture Sensor #2
     Microcontroller Pin: PC1 (ADC1)
     Arduino Uno Pin: A1
     Notes: Analog input.
 
-Configuration
+##Configuration
 
   Adjust parameters in plant_config.h.
 
@@ -57,7 +57,7 @@ Configuration
     #define FLOW_TIMEOUT_MS 5000          // 5000ms or 5 second timeout
 
 
-Operation
+##Operation
 
   Connect the hardware.
   Build and flash the code to the device.
