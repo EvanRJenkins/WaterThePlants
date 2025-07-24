@@ -6,10 +6,10 @@
 
 /* Adjust these constants for your physical setup */
 
-#define PLANTS_IN_GARDEN 2            // Adjust depending on # of plants currently in garden
-#define FLOW_RATE 562                 // Volumetric flow rate of pump in L/ms
+#define PLANTS_IN_GARDEN 2                    // Adjust depending on # of plants currently in garden
+#define FLOW_RATE 562                         // Volumetric flow rate of pump in mL/s
 #define FLOW_CHECK_SETPOINT (FLOW_RATE * 2)   // Minimum time (ms) between pulses for Flow Check to pass
-#define FLOW_TIMEOUT_MS 5000          // 5000ms or 5 second timeout
+#define FLOW_TIMEOUT_MS 5000                  // 5000ms or 5 second timeout
 
 
 /* Extern declarations for global variables */
