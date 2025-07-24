@@ -18,7 +18,6 @@ uint32_t g_timeoutStart;
 /* Startup functions */
 
 state_t sysInit() {
-  
   regConfig();
   
   definePlants();
@@ -33,15 +32,11 @@ state_t sysInit() {
 /* Main */
 
 int main(void) {
-  
   currentState = sysInit();   // sysInit() returns a the startup state
 
   while (1) {                 // State machine loop
-    
     switch (currentState) {   // State machine switch
-
       case IDLE:  
-
         if (g_isrFlags & PCINT0) {  // Start State sequence if PCINT0 flag
           currentState = LOG_PRE;
           g_isrFlags &= ~PCINT0;
@@ -55,7 +50,6 @@ int main(void) {
 
       
       case LOG_PRE:
-        
         if (currentPlantIndex < PLANTS_IN_GARDEN) {   // Two-state loop until all plants logged
           currentState = adcRecord(plantList[currentPlantIndex].sensorPin); // adcRecord() returns WAIT_FOR_ADC on success
         }
@@ -69,7 +63,6 @@ int main(void) {
 
 
       case WAIT_FOR_ADC:
-
         if (g_isrFlags & ADC) {                        // True if ADC complete flag
           plantList[currentPlantIndex].moistureLevel = ADCW;  // Load ADC data to current plant moistureLevel
           
@@ -90,7 +83,6 @@ int main(void) {
 
 
       case START_WATERING:
-
         g_timeoutStart = g_msCounter;   // Record start time for timeout
         
         currentState = startPump();     // startPump() returns WAIT_FOR_FLOW on success
@@ -99,9 +91,9 @@ int main(void) {
 
 
       case WAIT_FOR_FLOW:
-
         if (g_isrFlags & NEW_PULSE_DATA) {                  // If new pulse data is availiable
           g_isrFlags &= ~NEW_PULSE_DATA;                    // Clear the flag that there is new pulse data
+          
           if (g_pulseDuration < FLOW_CHECK_SETPOINT) {  // If pulse rate is fast enough, water flowing
             currentState = WATERING;                    // Start counting watering time
           }                                       
@@ -116,9 +108,7 @@ int main(void) {
       
 
       case WATERING:
-
         if (!(TCCR0B & ((1 << CS02) | (1 << CS01) | (1 << CS00)))) {  // True if no clock is selected
-        
           TCCR0B |= (1 << CS00);        // Select I/Oclk for Timer/Counter0 (Start it)
         }
         
@@ -130,7 +120,6 @@ int main(void) {
 
 
       case STOP_WATERING:
-
         currentState = stopPump();      // stopPump() returns LOG_POST on success
         
         TCCR0B &= ~((1 << CS02) | (1 << CS01) | (1 << CS00));  // Select no clock for Timer/Counter0
@@ -141,7 +130,6 @@ int main(void) {
       
       
       case LOG_POST:
-        
         if (currentPlantIndex < PLANTS_IN_GARDEN) {   // Same two-state loop as LOG_PRE
           currentState = adcRecord(plantList[currentPlantIndex].sensorPin);
         }
@@ -156,7 +144,6 @@ int main(void) {
 
 
       case ERROR:
-        
         // perform any fail safety actions
         
         // wait for error to clear
