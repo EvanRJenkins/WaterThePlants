@@ -4,10 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 /* Type Definitions */
-
-typedef enum State {                  // Enum for state machine
+typedef enum State  // Enum for state machine
+{
   IDLE,                             // Power down, only exit via interrupt
   LOG_PRE,                          // Record moisture of currentPlantIndex Plant
   WAIT_FOR_ADC,                     // Wait for new data, increment currentPlantIndex, go to LOG_PRE
@@ -19,11 +18,11 @@ typedef enum State {                  // Enum for state machine
   ERROR                             // System fault, block all tasks until error ack
 } state_t;
 
-typedef struct {                      // Holds key characteristics of an individual plant
+typedef struct  // Holds key characteristics of an individual plant
+{
   unsigned char species[10];      // String holding species name
   uint8_t sensorPin;              // Analog Input Pin for Plant's moisture sensor
   uint16_t moistureLevel;         // Most recently logged moisture level
 } Plant;
-
 
 #endif // MAIN_H
