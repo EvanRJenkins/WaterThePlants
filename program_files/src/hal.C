@@ -84,7 +84,6 @@ state_t startPump()
 
 state_t stopPump() 
 {
-  PORTD &= ~(1 << PUMP_PIN);  // Deactivate tank pump  
-  
+  PORTD &= ~(1 << PUMP_PIN);  // Deactivate tank pump   
   return LOG_POST;
 }
