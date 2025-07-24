@@ -20,7 +20,7 @@ typedef enum State {                  // Enum for state machine
 } state_t;
 
 typedef struct {                      // Holds key characteristics of an individual plant
-  unsigned char species[10];      // String holding plant species name
+  unsigned char species[10];      // String holding species name
   uint8_t sensorPin;              // Analog Input Pin for Plant's moisture sensor
   uint16_t moistureLevel;         // Most recently logged moisture level
 } Plant;
