@@ -5,10 +5,11 @@
 
 ## **System Features**
 
-  ### State Machine Control: The system runs on a state machine.
-  ### Multi-Plant Support: Can be configured for multiple plants.
-  ### Flow Verification: Uses a flow sensor to confirm the pump is working.
-  ### Low Power: Sleeps in an idle state until needed.
+**Deterministic Design**: Operates as an interrupt-driven state machine.
+**Portability**: Can be configured for different garden setups and plants species.
+**Fail Safety**: Non-blocking architecture with descriptive alerts and timeout conditions.
+**Customizable Controls**: Can be triggered via timer or manual input.
+**Power Efficiency**: Sleeps until watering protocol is activated.
 
 ## **Hardware Requirements**
 
