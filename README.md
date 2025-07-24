@@ -19,7 +19,7 @@
 \
 **Actuators**: 1x Water Pump with a driver (my implementation uses a relay).
 
-## **Pinout Configuration**
+## **Electrical Connections**
 ### *Pins are defined in hal.h*
 #### Function: Start Trigger
 **Microcontroller Pin**: PB0 (PCINT0)\
