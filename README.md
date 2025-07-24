@@ -1,8 +1,6 @@
 # **water_the_plants**
 *Automated Watering System Firmware for <ins>Potted<ins> Plants*
 
-*This is firmware for an automated plant watering system using an AVR microcontroller. It uses a state machine to check soil moisture and control a water tank pump.*
-
 ## **System Features**
 
 **Deterministic Design**: Operates as an interrupt-driven state machine.\
