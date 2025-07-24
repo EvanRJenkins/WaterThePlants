@@ -9,7 +9,7 @@ void regConfig() {
   DDRD |= (1 << PUMP_PIN);                      // Set pump pin data direction to output
 
   /* Sleep mode */
-  // SMCR |= (1 << SM1);                       // Set Sleep Mode Control Register to Power Down Mode
+  // SMCR |= (1 << SM1);                        // Set Sleep Mode Control Register to Power Down Mode
   
   /* Enable interrupts */
   ADCSRA |= (1 << ADIE);                        // Enable 'ADC complete' interrupt  
@@ -32,7 +32,7 @@ void regConfig() {
   OCR1A = 249;                                  // Set the compare match register for 1ms tick
 }
 
-state_t adcRecord(uint8_t targetPin) {    // Enables ADC an starts conversion for targetPin
+state_t adcRecord(uint8_t targetPin) {    // Enables ADC and starts conversion for targetPin
 /* Set MUX2..0 to ADC channel of targetPin */
  switch (targetPin) {
   
@@ -70,8 +70,8 @@ state_t adcRecord(uint8_t targetPin) {    // Enables ADC an starts conversion fo
     break;
  }
 
-  ADCSRA |= (1 << ADEN);  // Enable ADC (Set ADEN)
-  ADCSRA |= (1 << ADSC);  // Start ADC conversion (Set ADSC bit)
+  ADCSRA |= (1 << ADEN);  // Enable ADC
+  ADCSRA |= (1 << ADSC);  // Start ADC conversion
 
   return WAIT_FOR_ADC;
 }
