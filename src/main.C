@@ -29,6 +29,7 @@ state_t sysInit() {
   return IDLE;
 }
 
+
 /* Main */
 
 int main(void) {
