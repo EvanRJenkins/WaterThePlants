@@ -37,6 +37,7 @@ ISR(INT0_vect) {                  // Handler for flow sensor pulse
     firstPulseTime = g_msCounter;           // Record start time
     waitForSecondPulse = true;
   } 
+  
   else {  // Second Pulse
     g_pulseDuration = g_msCounter - firstPulseTime; // Store duration
     g_isrFlags |= NEW_PULSE_DATA;           // Set flag that data is ready
