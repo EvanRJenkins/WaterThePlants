@@ -21,29 +21,29 @@ This is firmware for an automated plant watering system using an AVR microcontro
   ### Pins are defined in hal.h.
 
   #### Function: Start Trigger
-    ##### Microcontroller Pin: PB0 (PCINT0)
-    ##### Arduino Uno Pin: D8
-    ##### Notes: Wakes system from IDLE.
+    Microcontroller Pin: PB0 (PCINT0)
+    Arduino Uno Pin: D8
+    Notes: Wakes system from IDLE.
 
   #### Function: Flow Sensor
-    ##### Microcontroller Pin: PD2 (INT0)
-    ##### Arduino Uno Pin: D2
-    ##### Notes: External interrupt on falling edge. (Probably wired to a push button)
+    Microcontroller Pin: PD2 (INT0)
+    Arduino Uno Pin: D2
+    Notes: External interrupt on falling edge. (Probably wired to a push button)
 
   #### Function: Pump Control
-    ##### Microcontroller Pin: PD3
-    ##### Arduino Uno Pin: D3
-    ##### Notes: Physical orientation is designed to stop water flow when pump is not running (without a valve).
+    Microcontroller Pin: PD3
+    Arduino Uno Pin: D3
+    Notes: Physical orientation is designed to stop water flow when pump is not running (without a valve).
 
   #### Function: Moisture Sensor #1
-    ##### Microcontroller Pin: PC0 (ADC0)
-    ##### Arduino Uno Pin: A0
-    ##### Notes: Analog input.
+    Microcontroller Pin: PC0 (ADC0)
+    Arduino Uno Pin: A0
+    Notes: Analog input.
 
   #### Function: Moisture Sensor #2
-    ##### Microcontroller Pin: PC1 (ADC1)
-    ##### Arduino Uno Pin: A1
-    ##### Notes: Analog input.
+    Microcontroller Pin: PC1 (ADC1)
+    Arduino Uno Pin: A1
+    Notes: Analog input.
 
 ## Configuration
 
