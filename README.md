@@ -25,7 +25,7 @@
 **Microcontroller Pin**: PB0 (PCINT0)\
 **Arduino Uno Pin**: D8\
 *__Notes__*: *Wakes system from IDLE.*\
-\
+
 #### Function: Flow Sensor
 **Microcontroller Pin**: PD2 (INT0)\
 **Arduino Uno Pin**: D2\
